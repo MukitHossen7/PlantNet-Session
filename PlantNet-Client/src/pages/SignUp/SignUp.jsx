@@ -6,7 +6,7 @@ import { TbFidgetSpinner } from "react-icons/tb";
 import { imageUpload } from "../../api/utils";
 
 const SignUp = () => {
-  const { createUser, updateUserProfile, signInWithGoogle, loading } =
+  const { createUser, updateUserProfile, signInWithGoogle, loading, logOut } =
     useAuth();
   const navigate = useNavigate();
   // form submit handler
@@ -24,10 +24,13 @@ const SignUp = () => {
       const result = await createUser(email, password);
 
       //3. Save username & profile photo
-      await updateUserProfile(name, photoURL);
+      updateUserProfile({ displayName: name, photoURL: photoURL }).then(() => {
+        logOut();
+        navigate("/login");
+      });
+
       console.log(result);
 
-      navigate("/");
       toast.success("Signup Successful");
     } catch (err) {
       console.log(err);
