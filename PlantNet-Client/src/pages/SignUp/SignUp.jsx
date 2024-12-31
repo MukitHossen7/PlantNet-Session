@@ -4,9 +4,10 @@ import useAuth from "../../hooks/useAuth";
 import { toast } from "react-hot-toast";
 import { TbFidgetSpinner } from "react-icons/tb";
 import { imageUpload } from "../../api/utils";
+import axios from "axios";
 
 const SignUp = () => {
-  const { createUser, updateUserProfile, signInWithGoogle, loading, logOut } =
+  const { createUser, updateUserProfile, signInWithGoogle, loading } =
     useAuth();
   const navigate = useNavigate();
   // form submit handler
@@ -24,13 +25,15 @@ const SignUp = () => {
       const result = await createUser(email, password);
 
       //3. Save username & profile photo
-      updateUserProfile({ displayName: name, photoURL: photoURL }).then(() => {
-        logOut();
-        navigate("/login");
-      });
-
-      console.log(result);
-
+      await updateUserProfile({ displayName: name, photoURL: photoURL });
+      if (result) {
+        await axios.post(`${import.meta.env.VITE_API_URL}/users`, {
+          name: result?.user?.displayName,
+          email: result?.user?.email,
+          photo: result?.user?.photoURL,
+        });
+      }
+      navigate("/login");
       toast.success("Signup Successful");
     } catch (err) {
       console.log(err);
@@ -42,8 +45,14 @@ const SignUp = () => {
   const handleGoogleSignIn = async () => {
     try {
       //User Registration using google
-      await signInWithGoogle();
-
+      const data = await signInWithGoogle();
+      if (data) {
+        await axios.post(`${import.meta.env.VITE_API_URL}/users`, {
+          name: data?.user?.displayName,
+          email: data?.user?.email,
+          photo: data?.user?.photoURL,
+        });
+      }
       navigate("/");
       toast.success("Signup Successful");
     } catch (err) {
