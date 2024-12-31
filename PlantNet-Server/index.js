@@ -21,6 +21,7 @@ app.use(morgan("dev"));
 
 //create user collection
 const userCollection = client.db("plantNetDB").collection("users");
+const plantCollection = client.db("plantNetDB").collection("plants");
 
 const verifyToken = async (req, res, next) => {
   const token = req.cookies?.token;
@@ -67,6 +68,7 @@ app.get("/logout", async (req, res) => {
   }
 });
 
+// save user info
 app.post("/users/:email", async (req, res) => {
   const user = req.body;
   const email = req.params.email;
@@ -81,6 +83,19 @@ app.post("/users/:email", async (req, res) => {
     timestamp: Date.now(),
   });
   res.send(result);
+});
+
+//save plantData in database
+app.post("/plants", async (req, res) => {
+  const plant = req.body;
+  const result = await plantCollection.insertOne(plant);
+  res.send(result);
+});
+
+//get plant data in database
+app.get("/plants", async (req, res) => {
+  const plants = await plantCollection.find().toArray();
+  res.send(plants);
 });
 app.get("/", (req, res) => {
   res.send("Hello from plantNet Server..");
