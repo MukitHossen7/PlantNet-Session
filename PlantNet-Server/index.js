@@ -19,6 +19,9 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
 
+//create user collection
+const userCollection = client.db("plantNetDB").collection("users");
+
 const verifyToken = async (req, res, next) => {
   const token = req.cookies?.token;
 
@@ -64,6 +67,21 @@ app.get("/logout", async (req, res) => {
   }
 });
 
+app.post("/users/:email", async (req, res) => {
+  const user = req.body;
+  const email = req.params.email;
+  const query = { email: email };
+  const existingUser = await userCollection.findOne(query);
+  if (existingUser) {
+    return res.send(existingUser);
+  }
+  const result = await userCollection.insertOne({
+    ...user,
+    role: "customer",
+    timestamp: Date.now(),
+  });
+  res.send(result);
+});
 app.get("/", (req, res) => {
   res.send("Hello from plantNet Server..");
 });
