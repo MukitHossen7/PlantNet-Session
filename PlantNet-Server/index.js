@@ -69,11 +69,10 @@ app.get("/logout", async (req, res) => {
 });
 
 // save user info
-app.post("/users/:email", async (req, res) => {
+app.post("/users", async (req, res) => {
   const user = req.body;
-  const email = req.params.email;
-  const query = { email: email };
-  const existingUser = await userCollection.findOne(query);
+  const email = req.body.email;
+  const existingUser = await userCollection.findOne({ email: email });
   if (existingUser) {
     return res.send(existingUser);
   }
@@ -85,6 +84,17 @@ app.post("/users/:email", async (req, res) => {
   res.send(result);
 });
 
+//check login use query
+
+app.post("/check-user", async (req, res) => {
+  const email = req.body.email;
+  const user = await userCollection.findOne({ email: email });
+  if (user) {
+    return res.send(user);
+  } else {
+    return res.status(404).send({ message: "User not found" });
+  }
+});
 //save plantData in database
 app.post("/plants", async (req, res) => {
   const plant = req.body;
