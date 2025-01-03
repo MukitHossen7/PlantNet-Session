@@ -7,7 +7,7 @@ import LoadingSpinner from "../../components/Shared/LoadingSpinner";
 import axios from "axios";
 
 const Login = () => {
-  const { signIn, signInWithGoogle, loading, user } = useAuth();
+  const { signIn, signInWithGoogle, loading, setLoading, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location?.state?.from?.pathname || "/";
@@ -34,6 +34,8 @@ const Login = () => {
     } catch (err) {
       console.log(err);
       toast.error(err?.message);
+    } finally {
+      setLoading(false);
     }
   };
 
