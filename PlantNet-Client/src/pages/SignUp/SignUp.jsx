@@ -19,6 +19,7 @@ const SignUp = () => {
     const password = form.password.value;
     const image = form.image.files[0];
     const photoURL = await imageUpload(image);
+    console.log(photoURL);
 
     try {
       //2. User Registration
