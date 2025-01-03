@@ -85,7 +85,6 @@ app.post("/users", async (req, res) => {
 });
 
 //check login use query
-
 app.post("/check-user", async (req, res) => {
   const email = req.body.email;
   const user = await userCollection.findOne({ email: email });
