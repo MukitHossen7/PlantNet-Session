@@ -59,6 +59,7 @@ const PurchaseModal = ({ closeModal, isOpen, plant, refetch }) => {
       const { data } = await axiosSecure.post(`/orders`, purchaseInfo);
       await axiosSecure.patch(`/orders/quantity/${_id}`, {
         totalQuantity: quantityValue,
+        status: "decrease",
       });
       refetch();
       if (data.insertedId) {
