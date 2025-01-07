@@ -15,8 +15,8 @@ const AddPlant = () => {
     const name = from.name.value;
     const category = from.category.value;
     const description = from.description.value;
-    const price = from.price.value;
-    const quantity = from.quantity.value;
+    const price = parseFloat(from.price.value);
+    const quantity = parseInt(from.quantity.value);
     const image = from.image.files[0];
     const imageURL = await imageUpload(image);
     const seller = {

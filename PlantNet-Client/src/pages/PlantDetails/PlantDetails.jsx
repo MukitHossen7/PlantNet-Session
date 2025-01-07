@@ -11,8 +11,11 @@ import LoadingSpinner from "../../components/Shared/LoadingSpinner";
 
 const PlantDetails = () => {
   const { id } = useParams();
-  console.log(id);
-  const { data: plant = {}, isLoading } = useQuery({
+  const {
+    data: plant = {},
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["plant", id],
     queryFn: async () => {
       const { data } = await axios.get(
@@ -22,7 +25,7 @@ const PlantDetails = () => {
     },
   });
 
-  let [isOpen, setIsOpen] = useState(true);
+  let [isOpen, setIsOpen] = useState(false);
 
   const closeModal = () => {
     setIsOpen(false);
@@ -95,7 +98,7 @@ const PlantDetails = () => {
                 text-neutral-500
               "
             >
-              Quantity: {quantity}$ Units Left Only!
+              Quantity: {quantity} Units Left Only!
             </p>
           </div>
           <hr className="my-6" />
@@ -103,13 +106,19 @@ const PlantDetails = () => {
             <p className="font-bold text-3xl text-gray-500">Price: {price}$</p>
             <div>
               <Button
+                onClick={() => setIsOpen(true)}
                 label={quantity.length > 0 ? "Purchase" : "Out of Stack"}
               />
             </div>
           </div>
           <hr className="my-6" />
 
-          <PurchaseModal closeModal={closeModal} isOpen={isOpen} />
+          <PurchaseModal
+            closeModal={closeModal}
+            isOpen={isOpen}
+            plant={plant}
+            refetch={refetch}
+          />
 
           <div className="md:col-span-3 order-first md:order-last mb-10">
             {/* RoomReservation */}
