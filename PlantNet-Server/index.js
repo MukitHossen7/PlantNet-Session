@@ -5,6 +5,7 @@ const cookieParser = require("cookie-parser");
 const { connection, client } = require("./DB/PlantNetDB");
 const jwt = require("jsonwebtoken");
 const morgan = require("morgan");
+const { ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
 const app = express();
 connection();
@@ -22,6 +23,7 @@ app.use(morgan("dev"));
 //create user collection
 const userCollection = client.db("plantNetDB").collection("users");
 const plantCollection = client.db("plantNetDB").collection("plants");
+const orderInfoCollection = client.db("plantNetDB").collection("orders");
 
 const verifyToken = async (req, res, next) => {
   const token = req.cookies?.token;
@@ -105,6 +107,32 @@ app.post("/plants", async (req, res) => {
 app.get("/plants", async (req, res) => {
   const plants = await plantCollection.find().toArray();
   res.send(plants);
+});
+
+//get plant data in database by id
+app.get("/plant/:id", async (req, res) => {
+  const id = req.params.id;
+  const plant = await plantCollection.findOne({ _id: new ObjectId(id) });
+  res.send(plant);
+});
+
+//user oderInfo save in database
+app.post("/orders", verifyToken, async (req, res) => {
+  const orderInfo = req.body;
+  const result = await orderInfoCollection.insertOne(orderInfo);
+  res.send(result);
+});
+
+//update quantity in database
+app.patch("/orders/quantity/:id", verifyToken, async (req, res) => {
+  const id = req.params.id;
+  const { totalQuantity } = req.body;
+  const query = { _id: new ObjectId(id) };
+  const updataDoc = {
+    $inc: { quantity: -totalQuantity },
+  };
+  const result = await plantCollection.updateOne(query, updataDoc);
+  res.send(result);
 });
 app.get("/", (req, res) => {
   res.send("Hello from plantNet Server..");
