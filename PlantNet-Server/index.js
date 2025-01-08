@@ -86,6 +86,17 @@ app.post("/users", async (req, res) => {
   res.send(result);
 });
 
+//get user role
+app.get("/user/role/:email", async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  const user = await userCollection.findOne(query);
+  if (user) {
+    return res.send(user.role);
+  } else {
+    return res.status(404).send({ message: "User not found" });
+  }
+});
 //check login use query
 app.post("/check-user", async (req, res) => {
   const email = req.body.email;
@@ -95,6 +106,22 @@ app.post("/check-user", async (req, res) => {
   } else {
     return res.status(404).send({ message: "User not found" });
   }
+});
+
+//set user status in user collection
+app.patch("/check_user/:email", async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  const user = await userCollection.findOne({ email: email });
+  if (!user || user.status === "Requested")
+    return res
+      .status(400)
+      .send({ message: "You have already requested, wait for some time" });
+  const updateDoc = {
+    $set: { status: "Requested" },
+  };
+  const result = await userCollection.updateOne(query, updateDoc);
+  res.send(result);
 });
 //save plantData in database
 app.post("/plants", async (req, res) => {
@@ -123,14 +150,69 @@ app.post("/orders", verifyToken, async (req, res) => {
   res.send(result);
 });
 
+//get orderInfo in database by user login email
+app.get("/customers-order/:email", verifyToken, async (req, res) => {
+  const email = req.params.email;
+  const query = { "customer.email": email };
+  const orders = await orderInfoCollection
+    .aggregate([
+      {
+        $match: query,
+      },
+      {
+        $addFields: {
+          plantId: { $toObjectId: "$plantId" },
+        },
+      },
+      {
+        $lookup: {
+          from: "plants",
+          localField: "plantId",
+          foreignField: "_id",
+          as: "plant",
+        },
+      },
+      { $unwind: "$plant" },
+      {
+        $addFields: {
+          name: "$plant.name",
+          image: "$plant.image",
+          category: "$plant.category",
+        },
+      },
+      {
+        $project: {
+          plant: 0,
+        },
+      },
+    ])
+    .toArray();
+  res.send(orders);
+});
+
+//delete order data in database
+app.delete("/orders/:id", async (req, res) => {
+  const id = req.params.id;
+  const order = await orderInfoCollection.findOne({ _id: new ObjectId(id) });
+  if (order.status === "delivered") {
+    return res.status(403).send({ message: "Cannot delete delivered order" });
+  }
+  const result = await orderInfoCollection.deleteOne({ _id: new ObjectId(id) });
+  res.send(result);
+});
 //update quantity in database
 app.patch("/orders/quantity/:id", verifyToken, async (req, res) => {
   const id = req.params.id;
-  const { totalQuantity } = req.body;
+  const { totalQuantity, status } = req.body;
   const query = { _id: new ObjectId(id) };
-  const updataDoc = {
+  let updataDoc = {
     $inc: { quantity: -totalQuantity },
   };
+  if (status === "increase") {
+    updataDoc = {
+      $inc: { quantity: totalQuantity },
+    };
+  }
   const result = await plantCollection.updateOne(query, updataDoc);
   res.send(result);
 });
