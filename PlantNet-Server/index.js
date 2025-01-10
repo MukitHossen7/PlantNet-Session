@@ -85,7 +85,25 @@ app.post("/users", async (req, res) => {
   });
   res.send(result);
 });
+//get all user in database
+app.get("/all-users/:email", verifyToken, async (req, res) => {
+  const email = req.params.email;
+  const query = { email: { $ne: email } };
+  const users = await userCollection.find(query).toArray();
+  res.send(users);
+});
 
+//update uses role and status in database
+app.patch("/single-user/role/:email", async (req, res) => {
+  const email = req.params.email;
+  const { role } = req.body;
+  const query = { email: email };
+  const updateDoc = {
+    $set: { role: role, status: "Verify" },
+  };
+  const result = await userCollection.updateOne(query, updateDoc);
+  res.send(result);
+});
 //get user role
 app.get("/user/role/:email", async (req, res) => {
   const email = req.params.email;
@@ -123,6 +141,7 @@ app.patch("/check_user/:email", async (req, res) => {
   const result = await userCollection.updateOne(query, updateDoc);
   res.send(result);
 });
+
 //save plantData in database
 app.post("/plants", async (req, res) => {
   const plant = req.body;
@@ -200,6 +219,7 @@ app.delete("/orders/:id", async (req, res) => {
   const result = await orderInfoCollection.deleteOne({ _id: new ObjectId(id) });
   res.send(result);
 });
+
 //update quantity in database
 app.patch("/orders/quantity/:id", verifyToken, async (req, res) => {
   const id = req.params.id;
