@@ -20,7 +20,6 @@ const MyOrders = () => {
       return data;
     },
   });
-  console.log(orders);
   if (isLoading) {
     return (
       <div>
@@ -91,6 +90,7 @@ const MyOrders = () => {
                       key={order._id}
                       order={order}
                       refetch={refetch}
+                      isLoading={isLoading}
                     />
                   ))}
                 </tbody>

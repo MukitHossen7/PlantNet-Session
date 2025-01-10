@@ -3,7 +3,9 @@ import { useState } from "react";
 import DeleteModal from "../../Modal/DeleteModal";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 import toast from "react-hot-toast";
-const CustomerOrderDataRow = ({ order, refetch }) => {
+import LoadingSpinner from "../../Shared/LoadingSpinner";
+// eslint-disable-next-line react/prop-types
+const CustomerOrderDataRow = ({ order, refetch, isLoading }) => {
   const { image, name, category, price, quantity, status, _id, plantId } =
     order || {};
   console.log(order);
@@ -26,6 +28,13 @@ const CustomerOrderDataRow = ({ order, refetch }) => {
       closeModal();
     }
   };
+  if (isLoading) {
+    return (
+      <div>
+        <LoadingSpinner />
+      </div>
+    );
+  }
   return (
     <tr>
       <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">

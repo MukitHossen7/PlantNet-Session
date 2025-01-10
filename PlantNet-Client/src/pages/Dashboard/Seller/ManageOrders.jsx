@@ -10,7 +10,11 @@ import useAxiosSecure from "../../../hooks/useAxiosSecure";
 const ManageOrders = () => {
   const axiosSecure = useAxiosSecure();
   const { user } = useContext(AuthContext);
-  const { data: orders = [], isLoading } = useQuery({
+  const {
+    data: orders = [],
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["orders", user?.email],
     queryFn: async () => {
       const { data } = await axiosSecure.get(`/seller-orders/${user?.email}`);
@@ -79,7 +83,11 @@ const ManageOrders = () => {
                 </thead>
                 <tbody>
                   {orders.map((order) => (
-                    <SellerOrderDataRow key={order._id} order={order} />
+                    <SellerOrderDataRow
+                      key={order._id}
+                      order={order}
+                      refetch={refetch}
+                    />
                   ))}
                 </tbody>
               </table>
