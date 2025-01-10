@@ -3,11 +3,13 @@ import AddPlantForm from "../../../components/Form/AddPlantForm";
 import { imageUpload } from "../../../api/utils";
 import { useContext, useState } from "react";
 import { AuthContext } from "../../../providers/AuthProvider";
-import axios from "axios";
+
 import toast from "react-hot-toast";
+import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
 const AddPlant = () => {
   const { user } = useContext(AuthContext);
+  const axiosSecure = useAxiosSecure();
   const [upLoadImages, setUpLoadImages] = useState("");
   const handlePlantDataFrom = async (e) => {
     e.preventDefault();
@@ -35,7 +37,7 @@ const AddPlant = () => {
     };
 
     try {
-      const { data } = await axios.post(
+      const { data } = await axiosSecure.post(
         `${import.meta.env.VITE_API_URL}/plants`,
         plantData
       );

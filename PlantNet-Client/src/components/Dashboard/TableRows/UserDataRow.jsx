@@ -3,6 +3,7 @@ import { useState } from "react";
 import UpdateUserModal from "../../Modal/UpdateUserModal";
 import PropTypes from "prop-types";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import toast from "react-hot-toast";
 
 const UserDataRow = ({ userData, refetch }) => {
   const { role, status, email } = userData || {};
@@ -12,10 +13,10 @@ const UserDataRow = ({ userData, refetch }) => {
   const handleUpdateRole = async (updataValue) => {
     if (role === updataValue) return;
     try {
-      const { data } = await axiosSecure.patch(`/single-user/role/${email}`, {
+      await axiosSecure.patch(`/single-user/role/${email}`, {
         role: updataValue,
       });
-      console.log(data);
+      toast.success("Role updated successfully");
       refetch();
     } catch (error) {
       console.log(error);
