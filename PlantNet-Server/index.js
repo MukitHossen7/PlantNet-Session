@@ -153,7 +153,6 @@ app.get("/plant/:id", async (req, res) => {
 });
 
 //get plant data in database by added email
-
 app.get("/plants/email/:email", verifyToken, verifySeller, async (req, res) => {
   const email = req.params.email;
   const plants = await plantCollection
@@ -168,6 +167,24 @@ app.delete("/plants/:id", verifyToken, verifySeller, async (req, res) => {
   const result = await plantCollection.deleteOne({ _id: new ObjectId(id) });
   res.send(result);
 });
+
+//update status in database for ordersCollections
+app.patch(
+  "/manages-orders/:id",
+  verifyToken,
+  verifySeller,
+  async (req, res) => {
+    const id = req.params.id;
+    const { status } = req.body;
+    const query = { _id: new ObjectId(id) };
+    let updataDoc = {
+      $set: { status: status },
+    };
+
+    const result = await orderInfoCollection.updateOne(query, updataDoc);
+    res.send(result);
+  }
+);
 //user oderInfo save in database
 app.post("/orders", verifyToken, async (req, res) => {
   const orderInfo = req.body;
@@ -215,7 +232,7 @@ app.get("/customers-order/:email", verifyToken, async (req, res) => {
   res.send(orders);
 });
 
-//get orderInfo in database by customer login email
+//get orderInfo in database by seller email
 app.get(
   "/seller-orders/:email",
   verifyToken,
@@ -261,16 +278,33 @@ app.get(
 );
 
 //delete order data in database
-app.delete("/orders/:id", async (req, res) => {
+app.delete("/orders/:id", verifyToken, async (req, res) => {
   const id = req.params.id;
   const order = await orderInfoCollection.findOne({ _id: new ObjectId(id) });
-  if (order.status === "delivered") {
-    return res.status(403).send({ message: "Cannot delete delivered order" });
+  if (order.status === "delivered" || order.status === "Delivered") {
+    return res.status(400).send({ message: "Cannot delete delivered order" });
   }
   const result = await orderInfoCollection.deleteOne({ _id: new ObjectId(id) });
   res.send(result);
 });
 
+//delete manage order data in database
+app.delete(
+  "/manages-orders/:id",
+  verifyToken,
+  verifySeller,
+  async (req, res) => {
+    const id = req.params.id;
+    const order = await orderInfoCollection.findOne({ _id: new ObjectId(id) });
+    if (order.status === "delivered") {
+      return res.status(403).send({ message: "Cannot delete delivered order" });
+    }
+    const result = await orderInfoCollection.deleteOne({
+      _id: new ObjectId(id),
+    });
+    res.send(result);
+  }
+);
 //update quantity in database
 app.patch("/orders/quantity/:id", verifyToken, async (req, res) => {
   const id = req.params.id;
