@@ -9,14 +9,13 @@ import { AuthContext } from "../../../providers/AuthProvider";
 const MyInventory = () => {
   const axiosSecure = useAxiosSecure();
   const { user } = useContext(AuthContext);
-  const { data: plants = [] } = useQuery({
+  const { data: plants = [], refetch } = useQuery({
     queryKey: ["inventory", user?.email],
     queryFn: async () => {
       const { data } = await axiosSecure.get(`/plants/email/${user?.email}`);
       return data;
     },
   });
-  console.log(plants);
   return (
     <>
       <Helmet>
@@ -76,7 +75,11 @@ const MyInventory = () => {
                 </thead>
                 <tbody>
                   {plants.map((plant) => (
-                    <PlantDataRow key={plant._id} plant={plant} />
+                    <PlantDataRow
+                      key={plant._id}
+                      plant={plant}
+                      refetch={refetch}
+                    />
                   ))}
                 </tbody>
               </table>
