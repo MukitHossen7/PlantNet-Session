@@ -175,7 +175,7 @@ app.post("/orders", verifyToken, async (req, res) => {
   res.send(result);
 });
 
-//get orderInfo in database by user login email
+//get orderInfo in database by customer login email
 app.get("/customers-order/:email", verifyToken, async (req, res) => {
   const email = req.params.email;
   const query = { "customer.email": email };
@@ -214,6 +214,51 @@ app.get("/customers-order/:email", verifyToken, async (req, res) => {
     .toArray();
   res.send(orders);
 });
+
+//get orderInfo in database by customer login email
+app.get(
+  "/seller-orders/:email",
+  verifyToken,
+  verifySeller,
+  async (req, res) => {
+    const email = req.params.email;
+    const query = { seller: email };
+    const orders = await orderInfoCollection
+      .aggregate([
+        {
+          $match: query,
+        },
+        {
+          $addFields: {
+            plantId: { $toObjectId: "$plantId" },
+          },
+        },
+        {
+          $lookup: {
+            from: "plants",
+            localField: "plantId",
+            foreignField: "_id",
+            as: "plant",
+          },
+        },
+        {
+          $unwind: "$plant",
+        },
+        {
+          $addFields: {
+            name: "$plant.name",
+          },
+        },
+        {
+          $project: {
+            plant: 0,
+          },
+        },
+      ])
+      .toArray();
+    res.send(orders);
+  }
+);
 
 //delete order data in database
 app.delete("/orders/:id", async (req, res) => {
