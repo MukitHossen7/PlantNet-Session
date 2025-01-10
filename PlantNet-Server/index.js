@@ -25,6 +25,7 @@ const userCollection = client.db("plantNetDB").collection("users");
 const plantCollection = client.db("plantNetDB").collection("plants");
 const orderInfoCollection = client.db("plantNetDB").collection("orders");
 
+//Verify token
 const verifyToken = async (req, res, next) => {
   const token = req.cookies?.token;
 
@@ -41,6 +42,27 @@ const verifyToken = async (req, res, next) => {
   });
 };
 
+//Verify Admin
+const verifyAdmin = async (req, res, next) => {
+  const email = req.user.email;
+  const query = { email };
+  const result = await userCollection.findOne(query);
+  if (!result || result.role !== "admin") {
+    return res.status(403).send({ message: "unauthorized access" });
+  }
+  next();
+};
+
+//Verify Seller
+const verifySeller = async (req, res, next) => {
+  const email = req.user.email;
+  const query = { email };
+  const result = await userCollection.findOne(query);
+  if (!result || result.role !== "seller") {
+    return res.status(403).send({ message: "unauthorized access" });
+  }
+  next();
+};
 // Generate jwt token
 app.post("/jwt", async (req, res) => {
   const email = req.body;
@@ -85,8 +107,9 @@ app.post("/users", async (req, res) => {
   });
   res.send(result);
 });
+
 //get all user in database
-app.get("/all-users/:email", verifyToken, async (req, res) => {
+app.get("/all-users/:email", verifyToken, verifyAdmin, async (req, res) => {
   const email = req.params.email;
   const query = { email: { $ne: email } };
   const users = await userCollection.find(query).toArray();
@@ -143,7 +166,7 @@ app.patch("/check_user/:email", async (req, res) => {
 });
 
 //save plantData in database
-app.post("/plants", async (req, res) => {
+app.post("/plants", verifyToken, verifySeller, async (req, res) => {
   const plant = req.body;
   const result = await plantCollection.insertOne(plant);
   res.send(result);
