@@ -6,6 +6,15 @@ const { connection, client } = require("./DB/PlantNetDB");
 const jwt = require("jsonwebtoken");
 const morgan = require("morgan");
 const { ObjectId } = require("mongodb");
+const plantPostController = require("./controller/plants.controller/plantPost.contoller");
+const verifyAdmin = require("./middleware/verifyAdmin");
+const verifySeller = require("./middleware/verifySeller");
+const verifyToken = require("./middleware/verifyToken");
+const {
+  userCollection,
+  plantCollection,
+  orderInfoCollection,
+} = require("./collection/collection");
 const port = process.env.PORT || 5000;
 const app = express();
 connection();
@@ -20,49 +29,6 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
 
-//create user collection
-const userCollection = client.db("plantNetDB").collection("users");
-const plantCollection = client.db("plantNetDB").collection("plants");
-const orderInfoCollection = client.db("plantNetDB").collection("orders");
-
-//Verify token
-const verifyToken = async (req, res, next) => {
-  const token = req.cookies?.token;
-
-  if (!token) {
-    return res.status(401).send({ message: "unauthorized access" });
-  }
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if (err) {
-      console.log(err);
-      return res.status(401).send({ message: "unauthorized access" });
-    }
-    req.user = decoded;
-    next();
-  });
-};
-
-//Verify Admin
-const verifyAdmin = async (req, res, next) => {
-  const email = req.user.email;
-  const query = { email };
-  const result = await userCollection.findOne(query);
-  if (!result || result.role !== "admin") {
-    return res.status(403).send({ message: "unauthorized access" });
-  }
-  next();
-};
-
-//Verify Seller
-const verifySeller = async (req, res, next) => {
-  const email = req.user.email;
-  const query = { email };
-  const result = await userCollection.findOne(query);
-  if (!result || result.role !== "seller") {
-    return res.status(403).send({ message: "unauthorized access" });
-  }
-  next();
-};
 // Generate jwt token
 app.post("/jwt", async (req, res) => {
   const email = req.body;
@@ -117,16 +83,21 @@ app.get("/all-users/:email", verifyToken, verifyAdmin, async (req, res) => {
 });
 
 //update uses role and status in database
-app.patch("/single-user/role/:email", async (req, res) => {
-  const email = req.params.email;
-  const { role } = req.body;
-  const query = { email: email };
-  const updateDoc = {
-    $set: { role: role, status: "Verify" },
-  };
-  const result = await userCollection.updateOne(query, updateDoc);
-  res.send(result);
-});
+app.patch(
+  "/single-user/role/:email",
+  verifyToken,
+  verifyAdmin,
+  async (req, res) => {
+    const email = req.params.email;
+    const { role } = req.body;
+    const query = { email: email };
+    const updateDoc = {
+      $set: { role: role, status: "Verify" },
+    };
+    const result = await userCollection.updateOne(query, updateDoc);
+    res.send(result);
+  }
+);
 //get user role
 app.get("/user/role/:email", async (req, res) => {
   const email = req.params.email;
@@ -166,11 +137,7 @@ app.patch("/check_user/:email", async (req, res) => {
 });
 
 //save plantData in database
-app.post("/plants", verifyToken, verifySeller, async (req, res) => {
-  const plant = req.body;
-  const result = await plantCollection.insertOne(plant);
-  res.send(result);
-});
+app.post("/plants", verifyToken, verifySeller, plantPostController);
 
 //get plant data in database
 app.get("/plants", async (req, res) => {
@@ -185,6 +152,22 @@ app.get("/plant/:id", async (req, res) => {
   res.send(plant);
 });
 
+//get plant data in database by added email
+
+app.get("/plants/email/:email", verifyToken, verifySeller, async (req, res) => {
+  const email = req.params.email;
+  const plants = await plantCollection
+    .find({ "seller.email": email })
+    .toArray();
+  res.send(plants);
+});
+
+//delete a plant from database by seller
+app.delete("/plants/:id", verifyToken, verifySeller, async (req, res) => {
+  const id = req.params.id;
+  const result = await plantCollection.deleteOne({ _id: new ObjectId(id) });
+  res.send(result);
+});
 //user oderInfo save in database
 app.post("/orders", verifyToken, async (req, res) => {
   const orderInfo = req.body;
