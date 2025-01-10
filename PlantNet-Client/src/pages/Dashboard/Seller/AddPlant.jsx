@@ -6,11 +6,13 @@ import { AuthContext } from "../../../providers/AuthProvider";
 
 import toast from "react-hot-toast";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import { useNavigate } from "react-router-dom";
 
 const AddPlant = () => {
   const { user } = useContext(AuthContext);
   const axiosSecure = useAxiosSecure();
   const [upLoadImages, setUpLoadImages] = useState("");
+  const navigate = useNavigate();
   const handlePlantDataFrom = async (e) => {
     e.preventDefault();
     const from = e.target;
@@ -43,6 +45,7 @@ const AddPlant = () => {
       );
       if (data.insertedId) {
         toast.success("Plants added successfully");
+        navigate("/dashboard/my-inventory");
       }
     } catch (error) {
       console.log(error);
