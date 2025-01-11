@@ -23,7 +23,7 @@ const SellerOrderDataRow = ({ order, refetch }) => {
   };
   const handleUpdate = async (e) => {
     e.preventDefault();
-    console.log(e.target.value);
+    if (e.target.value === status) return;
     try {
       await axiosSecure.patch(`/manages-orders/${_id}`, {
         status: e.target.value,
@@ -58,6 +58,7 @@ const SellerOrderDataRow = ({ order, refetch }) => {
       <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
         <div className="flex items-center gap-2">
           <select
+            disabled={status === "Delivered"}
             defaultValue={status}
             onChange={handleUpdate}
             required
@@ -69,6 +70,7 @@ const SellerOrderDataRow = ({ order, refetch }) => {
             <option value="Delivered">Deliver</option>
           </select>
           <button
+            disabled={status === "Delivered"}
             onClick={() => setIsOpen(true)}
             className="relative disabled:cursor-not-allowed cursor-pointer inline-block px-3 py-1 font-semibold text-green-900 leading-tight"
           >
