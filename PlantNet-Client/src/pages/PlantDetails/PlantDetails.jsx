@@ -3,14 +3,18 @@ import { Helmet } from "react-helmet-async";
 import Heading from "../../components/Shared/Heading";
 import Button from "../../components/Shared/Button/Button";
 import PurchaseModal from "../../components/Modal/PurchaseModal";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import LoadingSpinner from "../../components/Shared/LoadingSpinner";
+import useRole from "../../hooks/useRole";
+import { AuthContext } from "../../providers/AuthProvider";
 
 const PlantDetails = () => {
   const { id } = useParams();
+  const [role] = useRole();
+  const { user } = useContext(AuthContext);
   const {
     data: plant = {},
     isLoading,
@@ -106,8 +110,9 @@ const PlantDetails = () => {
             <p className="font-bold text-3xl text-gray-500">Price: {price}$</p>
             <div>
               <Button
+                disabled={role === "seller" || role === "admin" || !user}
                 onClick={() => setIsOpen(true)}
-                label={quantity.length > 0 ? "Purchase" : "Out of Stack"}
+                label={quantity > 0 ? "Purchase" : "Out of Stack"}
               />
             </div>
           </div>
