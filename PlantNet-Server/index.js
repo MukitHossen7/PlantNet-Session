@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const nodemailer = require("nodemailer");
 const { connection, client } = require("./DB/PlantNetDB");
 const jwt = require("jsonwebtoken");
 const morgan = require("morgan");
@@ -58,6 +59,38 @@ app.get("/logout", async (req, res) => {
   }
 });
 
+//Send email notification using nodemailer
+const sendEmail = (emailAddress, emailData) => {
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false, // true for port 465, false for other ports
+    auth: {
+      user: process.env.NODEMAILER_USER,
+      pass: process.env.NODEMAILER_PASSWORD,
+    },
+  });
+  transporter.verify((error, success) => {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log("Server is ready to take messages", success);
+    }
+  });
+  const mailBody = {
+    from: process.env.NODEMAILER_USER,
+    to: emailAddress,
+    subject: emailData?.subject,
+    html: `<p>${emailData?.massage}</p>`,
+  };
+  transporter.sendMail(mailBody, (error, info) => {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log("Email sent: ", info?.response);
+    }
+  });
+};
 // save user info
 app.post("/users", async (req, res) => {
   const user = req.body;
@@ -189,6 +222,18 @@ app.patch(
 app.post("/orders", verifyToken, async (req, res) => {
   const orderInfo = req.body;
   const result = await orderInfoCollection.insertOne(orderInfo);
+  if (result.insertedId) {
+    //To Customer
+    sendEmail(orderInfo.customer.email, {
+      subject: "Order Confirmation",
+      massage: `Your order has been confirmed. Order ID: ${result?.insertedId}`,
+    });
+    //To Seller
+    sendEmail(orderInfo.seller, {
+      subject: "Hurray!, You have an order to process",
+      massage: `Get the Plants ready for ${orderInfo?.customer?.name}`,
+    });
+  }
   res.send(result);
 });
 
