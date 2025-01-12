@@ -4,6 +4,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const nodemailer = require("nodemailer");
 const { connection, client } = require("./DB/PlantNetDB");
+const stripe = require("stripe")(process.env.PAYMENT_SERECT_KEY);
 const jwt = require("jsonwebtoken");
 const morgan = require("morgan");
 const { ObjectId } = require("mongodb");
@@ -115,6 +116,79 @@ app.get("/all-users/:email", verifyToken, verifyAdmin, async (req, res) => {
   res.send(users);
 });
 
+//Admin Stat
+app.get("/admin-stat", verifyToken, verifyAdmin, async (req, res) => {
+  const totalUsers = await userCollection.estimatedDocumentCount();
+  const totalPlants = await plantCollection.estimatedDocumentCount();
+  //chart aggregates data
+  const chartData = await orderInfoCollection
+    .aggregate([
+      {
+        $sort: { _id: -1 },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: { $toDate: "$_id" },
+            },
+          },
+          quantity: {
+            $sum: "$quantity",
+          },
+          price: {
+            $sum: "$price",
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          date: "$_id",
+          quantity: 1,
+          price: 1,
+        },
+      },
+    ])
+    .toArray();
+  const ordersDetails = await orderInfoCollection
+    .aggregate([
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          totalRevenue: { $sum: "$price" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+        },
+      },
+    ])
+    .next();
+  res.send({ totalUsers, totalPlants, chartData, ...ordersDetails });
+});
+
+//create payment intent
+app.post("/create-payment-intent", verifyToken, async (req, res) => {
+  const { quantity, plantId } = req.body;
+  const plant = await plantCollection.findOne({ _id: new ObjectId(plantId) });
+  if (!plant) {
+    return res.status(400).send({ message: "Plant not found" });
+  }
+  const amount = plant.price * quantity * 100;
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: amount,
+    currency: "usd",
+    automatic_payment_methods: {
+      enabled: true,
+    },
+  });
+  res.send(paymentIntent.client_secret);
+});
+
 //update uses role and status in database
 app.patch(
   "/single-user/role/:email",
@@ -131,6 +205,7 @@ app.patch(
     res.send(result);
   }
 );
+
 //get user role
 app.get("/user/role/:email", async (req, res) => {
   const email = req.params.email;
