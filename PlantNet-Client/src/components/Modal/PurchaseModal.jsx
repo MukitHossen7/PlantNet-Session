@@ -8,19 +8,22 @@ import {
 } from "@headlessui/react";
 import { Fragment, useContext, useEffect, useState } from "react";
 import { AuthContext } from "./../../providers/AuthProvider";
-import Button from "../../components/Shared/Button/Button";
 import toast from "react-hot-toast";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
-
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import CheckoutForm from "../Form/CheckoutForm";
+const stripePromise = loadStripe(import.meta.env.VITE_PAYMENT_PUBLISHABLE_KEY);
 const PurchaseModal = ({ closeModal, isOpen, plant, refetch }) => {
   const { user } = useContext(AuthContext);
   const axiosSecure = useAxiosSecure();
   const { category, name, price, quantity, _id, seller } = plant || {};
   const [quantityValue, setQuantityValue] = useState(1);
   const [totalPrice, setTotalPrice] = useState(price);
+
   const [purchaseInfo, setPurchaseInfo] = useState({
     plantId: _id,
-    price: totalPrice,
+    price: parseInt(totalPrice),
     quantity: quantityValue,
     seller: seller.email,
     address: "",
@@ -159,12 +162,14 @@ const PurchaseModal = ({ closeModal, isOpen, plant, refetch }) => {
                     required
                   />
                 </div>
-                <div className="mt-3">
-                  <Button
-                    onClick={handlePurchase}
-                    label={`Pay ${totalPrice || 0}`}
-                  ></Button>
-                </div>
+                {/* payment related work */}
+                <Elements stripe={stripePromise}>
+                  {/* from component use */}
+                  <CheckoutForm
+                    closeModal={closeModal}
+                    purchaseInfo={purchaseInfo}
+                  ></CheckoutForm>
+                </Elements>
               </DialogPanel>
             </TransitionChild>
           </div>
