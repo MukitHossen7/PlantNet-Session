@@ -9,14 +9,14 @@ import {
 import { Fragment, useContext, useEffect, useState } from "react";
 import { AuthContext } from "./../../providers/AuthProvider";
 import toast from "react-hot-toast";
-import useAxiosSecure from "../../hooks/useAxiosSecure";
+// import useAxiosSecure from "../../hooks/useAxiosSecure";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import CheckoutForm from "../Form/CheckoutForm";
 const stripePromise = loadStripe(import.meta.env.VITE_PAYMENT_PUBLISHABLE_KEY);
 const PurchaseModal = ({ closeModal, isOpen, plant, refetch }) => {
   const { user } = useContext(AuthContext);
-  const axiosSecure = useAxiosSecure();
+  // const axiosSecure = useAxiosSecure();
   const { category, name, price, quantity, _id, seller } = plant || {};
   const [quantityValue, setQuantityValue] = useState(1);
   const [totalPrice, setTotalPrice] = useState(price);
@@ -56,24 +56,23 @@ const PurchaseModal = ({ closeModal, isOpen, plant, refetch }) => {
     });
   };
 
-  const handlePurchase = async () => {
-    // Make API call to purchase plant
-    try {
-      const { data } = await axiosSecure.post(`/orders`, purchaseInfo);
-      await axiosSecure.patch(`/orders/quantity/${_id}`, {
-        totalQuantity: quantityValue,
-        status: "decrease",
-      });
-      refetch();
-      if (data.insertedId) {
-        toast.success("Purchase successful");
-      }
-    } catch (err) {
-      console.log(err);
-    } finally {
-      closeModal();
-    }
-  };
+  // const handlePurchase = async () => {
+  //   try {
+  //     const { data } = await axiosSecure.post(`/orders`, purchaseInfo);
+  //     await axiosSecure.patch(`/orders/quantity/${_id}`, {
+  //       totalQuantity: quantityValue,
+  //       status: "decrease",
+  //     });
+  //     refetch();
+  //     if (data.insertedId) {
+  //       toast.success("Purchase successful");
+  //     }
+  //   } catch (err) {
+  //     console.log(err);
+  //   } finally {
+  //     closeModal();
+  //   }
+  // };
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -168,6 +167,8 @@ const PurchaseModal = ({ closeModal, isOpen, plant, refetch }) => {
                   <CheckoutForm
                     closeModal={closeModal}
                     purchaseInfo={purchaseInfo}
+                    refetch={refetch}
+                    quantityValue={quantityValue}
                   ></CheckoutForm>
                 </Elements>
               </DialogPanel>

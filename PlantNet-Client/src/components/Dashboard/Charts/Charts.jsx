@@ -43,7 +43,7 @@ const Charts = ({ chartData }) => {
   // ];
   return (
     <div>
-      <BarChart width={730} height={250} data={[chartData]}>
+      <BarChart width={730} height={250} data={chartData}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="date" />
         <YAxis />
